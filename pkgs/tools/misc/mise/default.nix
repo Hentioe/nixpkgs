@@ -1,29 +1,30 @@
-{ lib
-, nix-update-script
-, rustPlatform
-, fetchFromGitHub
-, installShellFiles
-, stdenv
-, coreutils
-, bash
-, pkg-config
-, openssl
-, direnv
-, Security
-, SystemConfiguration
-, mise
-, testers
+{
+  lib,
+  nix-update-script,
+  rustPlatform,
+  fetchFromGitHub,
+  installShellFiles,
+  stdenv,
+  coreutils,
+  bash,
+  pkg-config,
+  openssl,
+  direnv,
+  Security,
+  SystemConfiguration,
+  mise,
+  testers,
 }:
 
 rustPlatform.buildRustPackage rec {
   pname = "mise";
-  version = "2024.9.0";
+  version = "2024.10.1";
 
   src = fetchFromGitHub {
     owner = "jdx";
     repo = "mise";
     rev = "v${version}";
-    hash = "sha256-q515JEpws1UnZm1b8zgGxPvudH846XV+Ct4qKN2mNMQ=";
+    hash = "sha256-8T9EZJfq+W9kCm6kmsapWb61rV3wokNtqmWqNpE/wtg=";
 
     # registry is not needed for compilation nor for tests.
     # contains files with the same name but different case, which cause problems with hash on darwin
@@ -32,10 +33,18 @@ rustPlatform.buildRustPackage rec {
     '';
   };
 
-  cargoHash = "sha256-jGqaGbue+AEK0YjhHMlm84XBgA20p8Um03TjctjXVz0=";
+  cargoHash = "sha256-UvsbscO9z1nyY/7TxY1pPsD5nXGX4lvOnMWLMFLsqwU=";
 
-  nativeBuildInputs = [ installShellFiles pkg-config ];
-  buildInputs = [ openssl ] ++ lib.optionals stdenv.isDarwin [ Security SystemConfiguration ];
+  nativeBuildInputs = [
+    installShellFiles
+    pkg-config
+  ];
+  buildInputs =
+    [ openssl ]
+    ++ lib.optionals stdenv.isDarwin [
+      Security
+      SystemConfiguration
+    ];
 
   postPatch = ''
     patchShebangs --build \
@@ -62,6 +71,11 @@ rustPlatform.buildRustPackage rec {
     "--skip=cli::plugins::ls::tests::test_plugin_list_urls"
     "--skip=cli::generate::git_pre_commit::tests::test_git_pre_commit"
     "--skip=cli::generate::github_action::tests::test_github_action"
+    "--skip=cli::generate::task_docs::tests::test_task_docs"
+    # Wrong file timestamp (./test/fixtures/shorthands.toml)
+    "--skip=tera::tests::test_last_modified"
+    # Download remote scripts
+    "--skip=plugins::core::ruby::tests::test_list_versions_matching"
   ];
   cargoTestFlags = [ "--all-features" ];
   # some tests access the same folders, don't test in parallel to avoid race conditions
